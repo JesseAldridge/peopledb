@@ -1,0 +1,8 @@
+{
+  "rules": {
+    "people": {
+      ".read": "true",
+      ".write": "auth.uid == data.child('firebase_user_id')"
+    }
+  }
+}

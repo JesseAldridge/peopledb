@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset=utf-8 />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Google Authentication with Popup</title>
+
+  <script src="/__/firebase/5.0.2/firebase-app.js"></script>
+  <script src="/__/firebase/5.0.2/firebase-auth.js"></script>
+  <script src="/__/firebase/5.0.2/firebase-database.js"></script>
+  <script src="/__/firebase/init.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.1.6/vue.min.js"></script>
+
+  <!-- Latest compiled and minified CSS -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+  <style>
+    /*style='border: solid 1px'*/
+    .box { margin: 10px; border: solid 2px; padding: 5px;}
+  </style>
+
+  <script type="text/javascript">
+    function toggleSignIn() {
+      if (!firebase.auth().currentUser) {
+        var provider = new firebase.auth.GoogleAuthProvider();
+        firebase.auth().signInWithPopup(provider).then(function(result) {
+          var user = result.user;
+        }).catch(function(error) {
+          console.error('error: ', error);
+        });
+      } else {
+        firebase.auth().signOut();
+      }
+      document.getElementById('quickstart-sign-in').disabled = true;
+    }
+
+    window.onload = function() {
+      document.getElementById('quickstart-sign-in').addEventListener('click', toggleSignIn, false);
+
+      new Vue({
+        el: "#main-app",
+        data() {
+          return {
+            companies: [],
+            institutions: [],
+            people: [],
+            local_user: {
+              first_name: null,
+              last_name: null,
+              user_id: null,
+            },
+          }
+        },
+        mounted() {
+          let root_ref = firebase.database().ref();
+          let vue_root = this;
+
+          root_ref.once('value').then(function(snap){
+            console.log('val:', snap.val());
+            vue_root.people = snap.val().people;
+          });
+
+          firebase.auth().onAuthStateChanged(function(user) {
+            if (user) {
+              var displayName = user.displayName;
+              var email = user.email;
+              var emailVerified = user.emailVerified;
+              var photoURL = user.photoURL;
+              var isAnonymous = user.isAnonymous;
+              vue_root.local_user.user_id = user.uid;
+              document.getElementById('quickstart-sign-in-status').textContent = 'Signed in';
+              document.getElementById('quickstart-sign-in').textContent = 'Sign out';
+            } else {
+              document.getElementById('quickstart-sign-in-status').textContent = 'Signed out';
+              document.getElementById('quickstart-sign-in').textContent = 'Sign in with Google';
+            }
+            document.getElementById('quickstart-sign-in').disabled = false;
+          });
+        },
+        methods: {
+          sign_out: function(event) {
+            firebase.auth().signOut();
+          },
+
+          put_user: function() {
+            let vue_root = this;
+
+            firebase.database().ref('people/' + vue_root.local_user.user_id).set({
+              first_name: vue_root.local_user.first_name,
+              last_name: vue_root.local_user.last_name,
+            });
+          }
+        }
+      });
+    };
+  </script>
+</head>
+<body>
+  <div v-cloak id="main-app">
+    <div class='box'>People:
+      <ul>
+        <li v-for="person in people">
+          {{person.name.first}} {{person.name.last}}
+        </li>
+      </ul>
+    </div>
+
+    <form class='box' @submit.prevent="put_user">
+      <div>
+        <label>
+          First name:
+          <input type="text" v-model="local_user.first_name"/>
+        </label>
+      </div>
+      <div>
+        <label>
+          Last name:
+          <input type="text" v-model="local_user.last_name"/>
+        </label>
+      </div>
+      <button class='btn btn-default' type="submit">Submit</button>
+    </form>
+  </div>
+
+  <div class='box'>
+    <button class='btn btn-default' disabled id="quickstart-sign-in">Sign in with Google</button>
+    <div>Firebase sign-in status: <span id="quickstart-sign-in-status">Unknown</span></div>
+  </div>
+</body>
+</html>
