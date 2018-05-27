@@ -1,8 +1,10 @@
 {
   "rules": {
     "people": {
-      ".read": "true",
-      ".write": "auth.uid == data.child('firebase_user_id')"
+      "$person_id": {
+        ".read": "true",
+        ".write": "auth.uid == data.child('firebase_user_id')"
+      }
     }
   }
 }
