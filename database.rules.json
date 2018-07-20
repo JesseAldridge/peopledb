@@ -1,9 +1,18 @@
 {
   "rules": {
+    ".read": "true",
     "people": {
       "$person_id": {
         ".read": "true",
-        ".write": "auth.uid == data.child('firebase_user_id')"
+        ".write": "auth.uid != null && (!data.exists() || auth.uid == data.child('user_id').val())",
+        ".validate": "newData.hasChild('name')"
+      }
+    },
+    "users": {
+      "$uid": {
+        ".read": "auth.uid == $uid",
+        ".write": "auth.uid == $uid",
+        ".validate": "newData.hasChild('person_id')"
       }
     }
   }
